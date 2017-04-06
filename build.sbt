@@ -69,7 +69,8 @@ lazy val wvletConfig =
     libraryDependencies ++= Seq(
       wvletTest,
       "org.yaml" % "snakeyaml" % "1.14",
-      "org.wvlet" %% "object-schema" % "1.0",
-       wvletTest 
+      "org.wvlet" %% "surface" % "0.1",
+      "org.wvlet" %% "wvlet-log" % "1.2.2",
+      wvletTest
     )
   )

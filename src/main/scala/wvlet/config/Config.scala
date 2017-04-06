@@ -20,12 +20,12 @@ import wvlet.config.PropertiesConfig.ConfigKey
 import wvlet.config.YamlReader.loadMapOf
 import wvlet.log.LogSupport
 import wvlet.log.io.IOUtil
-import wvlet.obj._
+import wvlet.surface.Surface
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.{universe => ru}
 
-case class ConfigHolder(tpe: ObjectType, value: Any)
+case class ConfigHolder(tpe: Surface, value: Any)
 
 case class ConfigPaths(configPaths: Seq[String]) extends LogSupport {
   info(s"Config file paths: [${configPaths.mkString(", ")}]")
@@ -39,7 +39,7 @@ object Config extends LogSupport {
     ))
 
   def apply(env: String, defaultEnv: String = "default", configPaths: Seq[String] = defaultConfigPath): Config = Config(ConfigEnv(env, defaultEnv, configPaths),
-    Map.empty[ObjectType, ConfigHolder])
+    Map.empty[Surface, ConfigHolder])
 
   def cleanupConfigPaths(paths: Seq[String]) = {
     val b = Seq.newBuilder[String]
@@ -69,13 +69,13 @@ case class ConfigEnv(env: String, defaultEnv: String, configPaths: Seq[String]) 
   def withConfigPaths(paths: Seq[String]): ConfigEnv = ConfigEnv(env, defaultEnv, paths)
 }
 
-case class ConfigChange(tpe:ObjectType, key:ConfigKey, default:Any, current:Any) {
+case class ConfigChange(tpe:Surface, key:ConfigKey, default:Any, current:Any) {
   override def toString = s"[${tpe}] ${key} = ${current} (default = ${default})"
 }
 
 import Config._
 
-case class Config private[config](env: ConfigEnv, holder: Map[ObjectType, ConfigHolder]) extends Iterable[ConfigHolder] with LogSupport {
+case class Config private[config](env: ConfigEnv, holder: Map[Surface, ConfigHolder]) extends Iterable[ConfigHolder] with LogSupport {
 
   // Customization
   def withEnv(newEnv: String, defaultEnv: String = "default"): Config = {
@@ -103,12 +103,12 @@ case class Config private[config](env: ConfigEnv, holder: Map[ObjectType, Config
     b.result
   }
 
-  private def find[A](tpe: ObjectType): Option[Any] = {
+  private def find[A](tpe: Surface): Option[Any] = {
     holder.get(tpe).map(_.value)
   }
 
   def of[ConfigType: ru.TypeTag]: ConfigType = {
-    val t = ObjectType.of(implicitly[ru.TypeTag[ConfigType]])
+    val t = Surface.ofimplicitly[ru.TypeTag[ConfigType]])
     find(t) match {
       case Some(x) =>
         x.asInstanceOf[ConfigType]
