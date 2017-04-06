@@ -37,7 +37,7 @@ class ConfigProviderTest extends WvletSpec {
       pending
       val config =
         Config("staging")
-        .registerFromYaml[ConfigA]("wvlet-config/src/test/resources/myconfig.yml")
+        .registerFromYaml[ConfigA]("src/test/resources/myconfig.yml")
 
 //      var d = newDesign
 //      for(c <- config.getAll) {

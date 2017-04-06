@@ -32,7 +32,7 @@ case class DefaultConfig(id: Int = 1, a:String = "hello")
   */
 class ConfigTest extends WvletSpec {
 
-  val configPaths = Seq("wvlet-config/src/test/resources")
+  val configPaths = Seq("src/test/resources")
 
   def loadConfig(env: String) =
     Config(env = env, configPaths = configPaths)

@@ -63,12 +63,13 @@ val buildSettings = Seq[Setting[_]](
 val wvletTest = "org.wvlet" %% "wvlet-test" % "0.27" % "test"
 
 lazy val wvletConfig =
-  Project(id = "wvlet-config", base = file("wvlet-config")).settings(
+  Project(id = "wvlet-config", base = file(".")).settings(
     buildSettings,
     description := "wvlet configuration module",
     libraryDependencies ++= Seq(
       wvletTest,
       "org.yaml" % "snakeyaml" % "1.14",
-      "org.wvlet" %% "surface" % "0.1"
+      "org.wvlet" %% "object-schema" % "1.0",
+       wvletTest 
     )
   )
