@@ -68,6 +68,7 @@ lazy val wvletConfig =
     description := "wvlet configuration module",
     libraryDependencies ++= Seq(
       wvletTest,
-      "org.yaml" % "snakeyaml" % "1.14"
+      "org.yaml" % "snakeyaml" % "1.14",
+      "org.wvlet" %% "surface" % "0.1"
     )
-  ).dependsOn(objectSchema)
+  )
