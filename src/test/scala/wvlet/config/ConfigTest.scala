@@ -18,7 +18,7 @@ import java.util.Properties
 
 import wvlet.config.PropertiesConfig.{ConfigKey, Prefix}
 import wvlet.log.io.IOUtil
-import wvlet.obj.tag._
+import wvlet.surface.tag._
 import wvlet.test.WvletSpec
 
 trait AppScope
