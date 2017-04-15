@@ -18,7 +18,7 @@ import java.{util => ju}
 import org.yaml.snakeyaml.Yaml
 import wvlet.log.LogSupport
 import wvlet.log.io.IOUtil._
-import wvlet.obj.ObjectBuilder
+import wvlet.surface.Surface
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
@@ -60,12 +60,12 @@ object YamlReader extends LogSupport {
     .toSeq
   }
 
-  def bind[A: ClassTag](prop: Map[AnyRef, AnyRef]): A = {
-    bind(prop.asJava).asInstanceOf[A]
+  def bind[A](surface:Surface, prop: Map[Any, Any]): A = {
+    bind(surface, prop).asInstanceOf[A]
   }
 
-  def bind[A: ClassTag](prop: java.util.Map[AnyRef, AnyRef]): A = {
-    val builder = ObjectBuilder(implicitly[ClassTag[A]].runtimeClass)
+  def bind[A](surface:Surface, prop: Map[Any, Any]): Any = {
+    val builder = new ObjectBuilder(surface)
     if (prop != null) {
       for ((k, v) <- prop) {
         v match {
@@ -78,8 +78,7 @@ object YamlReader extends LogSupport {
         }
       }
     }
-    builder.build.asInstanceOf[A]
+    builder.build
   }
-
 }
 

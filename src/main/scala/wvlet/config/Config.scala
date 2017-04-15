@@ -24,6 +24,7 @@ import wvlet.surface.Surface
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.{universe => ru}
+import scala.language.experimental.macros
 
 case class ConfigHolder(tpe: Surface, value: Any)
 

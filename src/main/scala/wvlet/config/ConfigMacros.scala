@@ -45,7 +45,7 @@ private[config] object ConfigMacros {
        }
       """
 
-    def getOrElse(default: c.Tree): Tree =
+    def getOrElse(default: Tree): Tree =
       q"""
        ${c.prefix}.find(${surface}) match {
          case Some(x) => x.asInstanceOf[$t]
@@ -54,7 +54,7 @@ private[config] object ConfigMacros {
       """
 
     def defaultValue = q"${c.prefix}.getDefaultValueOf(${surface}).asInstanceOf[$t]"
-    def register(config: c.Tree) = q"${c.prefix}.this + wvlet.config.ConfigHolder(${surface}, ${config})"
+    def register(config: Tree) = q"${c.prefix}.this + wvlet.config.ConfigHolder(${surface}, ${config})"
     def registerDefault = q"${c.prefix}.this + wvlet.config.ConfigHolder(${surface}, ${defaultValue})"
   }
 
