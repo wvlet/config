@@ -14,7 +14,7 @@
 package wvlet.config
 
 import java.io.{File, FileInputStream, FileNotFoundException}
-import java.util.Properties
+import java.util.{Locale, Properties}
 
 import wvlet.config.PropertiesConfig.ConfigKey
 import wvlet.config.YamlReader.loadMapOf
@@ -32,6 +32,13 @@ case class ConfigPaths(configPaths: Seq[String]) extends LogSupport {
 }
 
 object Config extends LogSupport {
+
+  trait ParameterNameFormatter
+  case object CanonicalNameFormatter extends ParameterNameFormatter {
+    def format(name:String) : String = {
+      name.toLowerCase(Locale.US).replaceAll("[ _\\.-]", "")
+    }
+  }
   private def defaultConfigPath = cleanupConfigPaths(
     Seq(
       ".", // current directory
@@ -107,55 +114,23 @@ case class Config private[config](env: ConfigEnv, holder: Map[Surface, ConfigHol
     holder.get(tpe).map(_.value)
   }
 
-  def of[ConfigType: ru.TypeTag]: ConfigType = {
-    val t = Surface.ofimplicitly[ru.TypeTag[ConfigType]])
-    find(t) match {
-      case Some(x) =>
-        x.asInstanceOf[ConfigType]
-      case None =>
-        throw new IllegalArgumentException(s"No config value for ${t} is found")
-    }
-  }
-
-  def getOrElse[ConfigType:ru.TypeTag](default: => ConfigType) : ConfigType = {
-    val t = ObjectType.of(implicitly[ru.TypeTag[ConfigType]])
-    find(t) match {
-      case Some(x) =>
-        x.asInstanceOf[ConfigType]
-      case None =>
-        default
-    }
-  }
-
-  def defaultValueOf[ConfigType: ru.TypeTag] : ConfigType = {
-    val tpe = ObjectType.of(implicitly[ru.TypeTag[ConfigType]])
-    getDefaultValueOf(tpe).asInstanceOf[ConfigType]
-  }
-
-  private def getDefaultValueOf(tpe:ObjectType) : Any = {
-    // Create the default object of this ConfigType
-    ObjectBuilder(tpe.rawType).build
-  }
+  def of[ConfigType]: ConfigType = macro ConfigMacros.configOf[ConfigType]
+  def getOrElse[ConfigType](default: => ConfigType) : ConfigType = macro ConfigMacros.getOrElse[ConfigType]
+  def defaultValueOf[ConfigType] : ConfigType = macro ConfigMacros.defaultValueOf[ConfigType]
 
   def +(h: ConfigHolder): Config = Config(env, this.holder + (h.tpe -> h))
   def ++(other: Config): Config = {
     Config(env, this.holder ++ other.holder)
   }
 
-  def register[ConfigType: ru.TypeTag](config: ConfigType): Config = {
-    val tpe = ObjectType.of(implicitly[ru.TypeTag[ConfigType]])
-    this + ConfigHolder(tpe, config)
-  }
+  def register[ConfigType](config: ConfigType): Config = macro ConfigMacros.register[ConfigType]
 
   /**
     * Register the default value of the object as configuration
     * @tparam ConfigType
     * @return
     */
-  def registerDefault[ConfigType: ru.TypeTag] : Config = {
-    val tpe = ObjectType.of(implicitly[ru.TypeTag[ConfigType]])
-    this + ConfigHolder(tpe, defaultValueOf[ConfigType])
-  }
+  def registerDefault[ConfigType] : Config = macro ConfigMacros.registerDefault[ConfigType]
 
   def registerFromYaml[ConfigType: ru.TypeTag : ClassTag](yamlFile: String): Config = {
     val tpe = ObjectType.of(implicitly[ru.TypeTag[ConfigType]])
@@ -214,6 +189,11 @@ case class Config private[config](env: ConfigEnv, holder: Map[Surface, ConfigHol
         }
         overrideWithProperties(props, onUnusedProperties)
     }
+  }
+
+  private def getDefaultValueOf(tpe:Surface) : Any = {
+    // Create the default object of this ConfigType
+    ObjectBuilder(tpe.rawType).build
   }
 
   private def findConfigFile(name: String): Option[String] = {
