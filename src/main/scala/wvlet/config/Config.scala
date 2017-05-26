@@ -21,10 +21,11 @@ import wvlet.config.YamlReader.loadMapOf
 import wvlet.log.LogSupport
 import wvlet.log.io.IOUtil
 import wvlet.surface.Surface
+import wvlet.surface.reflect.RuntimeSurface
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.{universe => ru}
-import scala.language.experimental.macros
+
 
 case class ConfigHolder(tpe: Surface, value: Any)
 
@@ -115,26 +116,51 @@ case class Config private[config](env: ConfigEnv, holder: Map[Surface, ConfigHol
     holder.get(tpe).map(_.value)
   }
 
-  def of[ConfigType]: ConfigType = macro ConfigMacros.configOf[ConfigType]
-  def getOrElse[ConfigType](default: => ConfigType) : ConfigType = macro ConfigMacros.getOrElse[ConfigType]
-  def defaultValueOf[ConfigType] : ConfigType = macro ConfigMacros.defaultValueOf[ConfigType]
+  def of[ConfigType: ru.TypeTag]: ConfigType = {
+    val t = RuntimeSurface(implicitly[ru.TypeTag[ConfigType]].tpe)
+    find(t) match {
+      case Some(x) =>
+        x.asInstanceOf[ConfigType]
+      case None =>
+        throw new IllegalArgumentException(s"No config value for ${t} is found")
+    }
+  }
+
+  def getOrElse[ConfigType: ru.TypeTag](default: => ConfigType) : ConfigType = {
+    val t = RuntimeSurface(implicitly[ru.TypeTag[ConfigType]].tpe)
+    find(t) match {
+      case Some(x) =>
+        x.asInstanceOf[ConfigType]
+      case None =>
+        default
+    }
+  }
+  def defaultValueOf[ConfigType: ru.TypeTag] : ConfigType = {
+    val tpe = RuntimeSurface(implicitly[ru.TypeTag[ConfigType]].tpe)
+    getDefaultValueOf(tpe).asInstanceOf[ConfigType]
+  }
 
   def +(h: ConfigHolder): Config = Config(env, this.holder + (h.tpe -> h))
   def ++(other: Config): Config = {
     Config(env, this.holder ++ other.holder)
   }
 
-  def register[ConfigType](config: ConfigType): Config = macro ConfigMacros.register[ConfigType]
+  def register[ConfigType: ru.TypeTag](config: ConfigType): Config = {
+    val tpe = RuntimeSurface(implicitly[ru.TypeTag[ConfigType]].tpe)
+    this + ConfigHolder(tpe, config)
+  }
 
   /**
     * Register the default value of the object as configuration
     * @tparam ConfigType
     * @return
     */
-  def registerDefault[ConfigType] : Config = macro ConfigMacros.registerDefault[ConfigType]
+  def registerDefault[ConfigType: ru.TypeTag] : Config = {
+    val tpe = RuntimeSurface(implicitly[ru.TypeTag[ConfigType]].tpe)
+    this + ConfigHolder(tpe, defaultValueOf[ConfigType])  }
 
-  def registerFromYaml[ConfigType: ru.TypeTag : ClassTag](yamlFile: String): Config = {
-    val tpe = ObjectType.of(implicitly[ru.TypeTag[ConfigType]])
+  def registerFromYaml[ConfigType: ru.TypeTag](yamlFile: String): Config = {
+    val tpe = RuntimeSurface(implicitly[ru.TypeTag[ConfigType]].tpe)
     val config: Option[ConfigType] = loadFromYaml[ConfigType](yamlFile, onMissingFile = {
       throw new FileNotFoundException(s"${yamlFile} is not found in ${env.configPaths.mkString(":")}")
     })
@@ -147,12 +173,12 @@ case class Config private[config](env: ConfigEnv, holder: Map[Surface, ConfigHol
   }
 
   private def loadFromYaml[ConfigType: ru.TypeTag](yamlFile: String, onMissingFile: => Option[ConfigType]): Option[ConfigType] = {
-    val tpe = ObjectType.of(implicitly[ru.TypeTag[ConfigType]])
+    val tpe = RuntimeSurface(implicitly[ru.TypeTag[ConfigType]].tpe)
     findConfigFile(yamlFile) match {
       case None =>
         onMissingFile
       case Some(realPath) =>
-        val m = loadMapOf[ConfigType](realPath)(ClassTag(tpe.rawType))
+        val m = loadMapOf[ConfigType](realPath)
         m.get(env.env) match {
           case Some(x) =>
             info(s"Loading ${tpe} from ${realPath}, env:${env.env}")
@@ -169,7 +195,7 @@ case class Config private[config](env: ConfigEnv, holder: Map[Surface, ConfigHol
   }
 
   def registerFromYamlOrElse[ConfigType: ru.TypeTag : ClassTag](yamlFile: String, defaultValue: => ConfigType): Config = {
-    val tpe = ObjectType.of(implicitly[ru.TypeTag[ConfigType]])
+    val tpe = RuntimeSurface(implicitly[ru.TypeTag[ConfigType]].tpe)
     val config = loadFromYaml[ConfigType](yamlFile, onMissingFile = Some(defaultValue))
     this + ConfigHolder(tpe, config.get)
   }
@@ -194,7 +220,7 @@ case class Config private[config](env: ConfigEnv, holder: Map[Surface, ConfigHol
 
   private def getDefaultValueOf(tpe:Surface) : Any = {
     // Create the default object of this ConfigType
-    ObjectBuilder(tpe.rawType).build
+    new ObjectBuilder(tpe).build
   }
 
   private def findConfigFile(name: String): Option[String] = {

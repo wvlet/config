@@ -102,11 +102,11 @@ object PropertiesConfig extends LogSupport {
     unusedProperties ++= overrides.filterNot(x => knownPrefixes.contains(x.key.prefix))
 
     val newConfigs = for (ConfigHolder(tpe, value) <- config) yield {
-      val configBuilder = ObjectBuilder.fromObject(value)
+      val configBuilder = ObjectBuilder.fromObject(tpe, value)
       val prefix = extractPrefix(tpe)
-      val schema = Surface.of(tpe)
+      val schema = tpe
 
-      val (overrideParams, unused) = overrides.filter(_.key.prefix == prefix).partition(p => schema.containsParameter(p.key.param))
+      val (overrideParams, unused) = overrides.filter(_.key.prefix == prefix).partition(p => schema.params.exists(_.name == p.key.param))
       unusedProperties ++= unused
       for (p <- overrideParams) {
         trace(s"override: ${p}")

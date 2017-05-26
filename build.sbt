@@ -1,10 +1,10 @@
 import ReleaseTransformations._
 
-scalaVersion in ThisBuild := "2.12.1"
+val SCALA_2_12 = "2.12.2"
+scalaVersion in ThisBuild := SCALA_2_12
 
 val buildSettings = Seq[Setting[_]](
-  scalaVersion := "2.12.1",
-  crossScalaVersions := Seq("2.12.1", "2.11.8"),
+  crossScalaVersions := Seq(SCALA_2_12, "2.11.11"),
   organization := "org.wvlet",
   description := "A framework for structured data mapping",
   crossPaths := true,
@@ -70,7 +70,8 @@ lazy val wvletConfig =
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
       "org.yaml" % "snakeyaml" % "1.14",
-      "org.wvlet" %% "surface" % "0.4",
+      "org.wvlet" %% "surface" % "0.14-SNAPSHOT",
+      "org.wvlet" %% "object-schema" % "1.0",
       "org.wvlet" %% "wvlet-log" % "1.2.3",
       wvletTest
     )

@@ -19,15 +19,17 @@ import org.yaml.snakeyaml.Yaml
 import wvlet.log.LogSupport
 import wvlet.log.io.IOUtil._
 import wvlet.surface.Surface
+import wvlet.surface.reflect.RuntimeSurface
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
+import scala.reflect.runtime.{universe => ru}
 
 object YamlReader extends LogSupport {
 
-  def load[A](resourcePath: String, env: String)(implicit m: ClassTag[A]): A = {
+  def load[A: ru.TypeTag](resourcePath: String, env: String): A = {
     val map = loadMapOf[A](resourcePath)
     if (!map.containsKey(env)) {
       throw new IllegalArgumentException(s"Env $env is not found in $resourcePath")
@@ -35,11 +37,12 @@ object YamlReader extends LogSupport {
     map(env)
   }
 
-  def loadMapOf[A](resourcePath: String)(implicit m: ClassTag[A]): Map[String, A] = {
+  def loadMapOf[A: ru.TypeTag](resourcePath: String): Map[String, A] = {
     val yaml = loadYaml(resourcePath)
+    val surface: Surface = RuntimeSurface(implicitly[ru.TypeTag[A]].tpe)
     val map = ListMap.newBuilder[String, A]
     for ((k, v) <- yaml) yield {
-      map += k.toString -> bind[A](v.asInstanceOf[java.util.Map[AnyRef, AnyRef]])
+      map += k.toString -> bind[A](surface, v.asInstanceOf[java.util.Map[AnyRef, AnyRef]])
     }
     map.result
   }
@@ -60,11 +63,11 @@ object YamlReader extends LogSupport {
     .toSeq
   }
 
-  def bind[A](surface:Surface, prop: Map[Any, Any]): A = {
-    bind(surface, prop).asInstanceOf[A]
+  def bind[A: ru.TypeTag](prop: Map[AnyRef, AnyRef]): A = {
+    bind(RuntimeSurface(implicitly[ru.TypeTag[A]].tpe), prop.asJava).asInstanceOf[A]
   }
 
-  def bind[A](surface:Surface, prop: Map[Any, Any]): Any = {
+  def bind[A](surface:Surface, prop: java.util.Map[AnyRef, AnyRef]): A = {
     val builder = new ObjectBuilder(surface)
     if (prop != null) {
       for ((k, v) <- prop) {
@@ -78,7 +81,7 @@ object YamlReader extends LogSupport {
         }
       }
     }
-    builder.build
+    builder.build.asInstanceOf[A]
   }
 }
 
