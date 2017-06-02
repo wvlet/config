@@ -71,7 +71,6 @@ lazy val wvletConfig =
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
       "org.yaml" % "snakeyaml" % "1.14",
       "org.wvlet" %% "surface" % "0.14-SNAPSHOT",
-      "org.wvlet" %% "object-schema" % "1.0",
       "org.wvlet" %% "wvlet-log" % "1.2.3",
       wvletTest
     )

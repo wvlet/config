@@ -18,7 +18,7 @@ import java.{util => ju}
 import org.yaml.snakeyaml.Yaml
 import wvlet.log.LogSupport
 import wvlet.log.io.IOUtil._
-import wvlet.obj.ObjectBuilder
+import wvlet.surface.reflect.ObjectBuilder
 import wvlet.surface.Surface
 import wvlet.surface.reflect.RuntimeSurface
 
@@ -70,7 +70,7 @@ object YamlReader extends LogSupport {
 
   def bind[A](surface:Surface, prop: java.util.Map[AnyRef, AnyRef]): A = {
     trace(s"bind ${surface}, prop:${prop.asScala}")
-    val builder = ObjectBuilder(surface.rawType)
+    val builder = ObjectBuilder(surface)
     if (prop != null) {
       for ((k, v) <- prop.asScala) {
         v match {

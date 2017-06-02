@@ -17,8 +17,8 @@ import java.util.Properties
 
 import wvlet.config.Config.CanonicalNameFormatter
 import wvlet.log.LogSupport
-import wvlet.obj.ObjectBuilder
 import wvlet.surface.{Surface, TaggedSurface}
+import wvlet.surface.reflect.ObjectBuilder
 
 import scala.util.{Failure, Success, Try}
 
@@ -104,7 +104,7 @@ object PropertiesConfig extends LogSupport {
     unusedProperties ++= overrides.filterNot(x => knownPrefixes.contains(x.key.prefix))
 
     val newConfigs = for (ConfigHolder(tpe, value) <- config) yield {
-      val configBuilder = ObjectBuilder.fromObject(value)
+      val configBuilder = ObjectBuilder.fromObject(tpe, value)
       val prefix = extractPrefix(tpe)
       val schema = tpe
 

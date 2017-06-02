@@ -225,7 +225,7 @@ case class Config private[config](env: ConfigEnv, holder: Map[Surface, ConfigHol
       .map{ x =>
         // Prepare the constructor arguments
         val args = for(p <- tpe.params) yield {
-          p.defaultValue.getOrElse(Zero.zeroOf(p.surface))
+          p.getDefaultValue.getOrElse(Zero.zeroOf(p.surface))
         }
         // Create the default object of this ConfigType
         x.newInstance(args)
