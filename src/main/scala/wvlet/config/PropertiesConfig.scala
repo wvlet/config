@@ -17,6 +17,7 @@ import java.util.Properties
 
 import wvlet.config.Config.CanonicalNameFormatter
 import wvlet.log.LogSupport
+import wvlet.obj.ObjectBuilder
 import wvlet.surface.{Surface, TaggedSurface}
 
 import scala.util.{Failure, Success, Try}
@@ -72,10 +73,11 @@ object PropertiesConfig extends LogSupport {
   private[config] def toConfigProperties(tpe:Surface, config: Any): Seq[ConfigProperty] = {
     val prefix = extractPrefix(tpe)
     val b = Seq.newBuilder[ConfigProperty]
-    for (p <- tpe.params) yield {
+    for (p <- tpe.params) {
       val key = ConfigKey(prefix, CanonicalNameFormatter.format(p.name))
       Try(p.get(config)) match {
-        case Success(v) => b += ConfigProperty(key, v)
+        case Success(v) =>
+          b += ConfigProperty(key, v)
         case Failure(e) =>
           warn(s"Failed to read parameter ${p} from ${config}")
       }
@@ -94,19 +96,23 @@ object PropertiesConfig extends LogSupport {
       }
       b.result
     }
-
     val unusedProperties = Seq.newBuilder[ConfigProperty]
 
     // Check properties for unknown config objects
     val knownPrefixes = config.map(x => extractPrefix(x.tpe)).toSet
+
     unusedProperties ++= overrides.filterNot(x => knownPrefixes.contains(x.key.prefix))
 
     val newConfigs = for (ConfigHolder(tpe, value) <- config) yield {
-      val configBuilder = ObjectBuilder.fromObject(tpe, value)
+      val configBuilder = ObjectBuilder.fromObject(value)
       val prefix = extractPrefix(tpe)
       val schema = tpe
 
-      val (overrideParams, unused) = overrides.filter(_.key.prefix == prefix).partition(p => schema.params.exists(_.name == p.key.param))
+      val (overrideParams, unused) =
+        overrides
+        .filter(_.key.prefix == prefix)
+        .partition(p => schema.params.exists(_.name == p.key.param))
+
       unusedProperties ++= unused
       for (p <- overrideParams) {
         trace(s"override: ${p}")

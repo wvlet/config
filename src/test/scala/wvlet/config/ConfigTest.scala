@@ -165,7 +165,7 @@ class ConfigTest extends WvletSpec {
       c2 shouldBe DefaultConfig(1, "world")
     }
 
-    "show the default configuration" in {
+    "show the default configuration" taggedAs("show-default") in {
       val config = Config(env = "default", configPaths = configPaths)
                    .registerFromYaml[SampleConfig]("myconfig.yml")
 
