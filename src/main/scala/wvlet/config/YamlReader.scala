@@ -69,7 +69,7 @@ object YamlReader extends LogSupport {
   }
 
   def bind[A](surface:Surface, prop: java.util.Map[AnyRef, AnyRef]): A = {
-    debug(s"bind ${surface}, prop:${prop.asScala}")
+    trace(s"bind ${surface}, prop:${prop.asScala}")
     val builder = ObjectBuilder(surface.rawType)
     if (prop != null) {
       for ((k, v) <- prop.asScala) {

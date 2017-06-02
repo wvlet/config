@@ -20,7 +20,7 @@ import wvlet.config.PropertiesConfig.ConfigKey
 import wvlet.config.YamlReader.loadMapOf
 import wvlet.log.LogSupport
 import wvlet.log.io.IOUtil
-import wvlet.obj.ObjectBuilder
+import wvlet.obj.{ObjectBuilder, TypeUtil}
 import wvlet.surface.Surface
 import wvlet.surface.reflect.RuntimeSurface
 
@@ -106,7 +106,6 @@ case class Config private[config](env: ConfigEnv, holder: Map[Surface, ConfigHol
       val defaultProps = PropertiesConfig.toConfigProperties(c.tpe, getDefaultValueOf(c.tpe))
       val currentProps = PropertiesConfig.toConfigProperties(c.tpe, c.value)
 
-      debug(s"default:${defaultProps}, current:${currentProps}")
       for((k, props) <- defaultProps.groupBy(_.key); defaultValue <- props; current <- currentProps.filter(x => x.key == k)) {
         b += ConfigChange(c.tpe, k, defaultValue.v, current.v)
       }
@@ -124,7 +123,7 @@ case class Config private[config](env: ConfigEnv, holder: Map[Surface, ConfigHol
       case Some(x) =>
         x.asInstanceOf[ConfigType]
       case None =>
-        throw new IllegalArgumentException(s"No config value for ${t} is found")
+       throw new IllegalArgumentException(s"No config value for ${t} is found")
     }
   }
 
@@ -221,8 +220,20 @@ case class Config private[config](env: ConfigEnv, holder: Map[Surface, ConfigHol
   }
 
   private def getDefaultValueOf(tpe:Surface) : Any = {
-    // Create the default object of this ConfigType
-    ObjectBuilder(tpe.rawType).build
+    val v =
+      tpe.objectFactory
+      .map{ x =>
+        // Prepare the constructor arguments
+        val args = for(p <- tpe.params) yield {
+          p.defaultValue.getOrElse(TypeUtil.zero(p.surface.rawType))
+        }
+        // Create the default object of this ConfigType
+        x.newInstance(args)
+      }
+      .getOrElse(TypeUtil.zero(tpe.rawType))
+
+    trace(s"get default value of ${tpe} = ${v}")
+    v
   }
 
   private def findConfigFile(name: String): Option[String] = {

@@ -172,7 +172,7 @@ class ConfigTest extends WvletSpec {
       val default = config.defaultValueOf[SampleConfig]
       val current = config.of[SampleConfig]
 
-      info(s"default: ${default}, current: ${current}")
+      info(s"default: ${default}\ncurrent: ${current}")
 
       val changes = config.getConfigChanges
       changes.size shouldBe 2
