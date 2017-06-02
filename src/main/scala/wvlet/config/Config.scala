@@ -20,8 +20,8 @@ import wvlet.config.PropertiesConfig.ConfigKey
 import wvlet.config.YamlReader.loadMapOf
 import wvlet.log.LogSupport
 import wvlet.log.io.IOUtil
-import wvlet.obj.{ObjectBuilder, TypeUtil}
 import wvlet.surface.Surface
+import wvlet.surface.Zero
 import wvlet.surface.reflect.RuntimeSurface
 
 import scala.reflect.ClassTag
@@ -225,12 +225,12 @@ case class Config private[config](env: ConfigEnv, holder: Map[Surface, ConfigHol
       .map{ x =>
         // Prepare the constructor arguments
         val args = for(p <- tpe.params) yield {
-          p.defaultValue.getOrElse(TypeUtil.zero(p.surface.rawType))
+          p.defaultValue.getOrElse(Zero.zeroOf(p.surface))
         }
         // Create the default object of this ConfigType
         x.newInstance(args)
       }
-      .getOrElse(TypeUtil.zero(tpe.rawType))
+      .getOrElse(Zero.zeroOf(tpe))
 
     trace(s"get default value of ${tpe} = ${v}")
     v
