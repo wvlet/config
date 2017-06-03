@@ -41,6 +41,12 @@ val buildSettings = Seq[Setting[_]](
     Resolver.sonatypeRepo("releases"),
     Resolver.sonatypeRepo("snapshots")
   ),
+  publishTo := Some(
+    if (isSnapshot.value)
+      Opts.resolver.sonatypeSnapshots
+    else
+    Opts.resolver.sonatypeStaging
+  ),
   // Release settings
   releaseTagName := { (version in ThisBuild).value },
   releaseProcess := Seq[ReleaseStep](
