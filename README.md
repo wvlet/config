@@ -8,7 +8,7 @@ wvlet-config enables configure your Scala applications in a simple flow:
 1. (optional) Override the configuration with Properties.
 1. Use it!
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.wvlet/wvlet-config_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.wvlet/wvlet-config_2.11/)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.wvlet/wvlet-config_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.wvlet/wvlet-config_2.12/)
 
 ```scala
 libraryDependencies += "org.wvlet" %% "wvlet-cofig" % "(version)"
