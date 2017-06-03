@@ -1,10 +1,10 @@
 import ReleaseTransformations._
 
-scalaVersion in ThisBuild := "2.12.1"
+val SCALA_2_12 = "2.12.2"
+scalaVersion in ThisBuild := SCALA_2_12
 
 val buildSettings = Seq[Setting[_]](
-  scalaVersion := "2.12.1",
-  crossScalaVersions := Seq("2.12.1", "2.11.8"),
+  crossScalaVersions := Seq(SCALA_2_12, "2.11.11"),
   organization := "org.wvlet",
   description := "A framework for structured data mapping",
   crossPaths := true,
@@ -24,9 +24,9 @@ val buildSettings = Seq[Setting[_]](
       </license>
     </licenses>
     <scm>
-      <connection>scm:git:github.com/wvlet/wvlet.git</connection>
-      <developerConnection>scm:git:git@github.com:wvlet/wvlet.git</developerConnection>
-      <url>github.com/wvlet/wvlet.git</url>
+      <connection>scm:git:github.com/wvlet/config.git</connection>
+      <developerConnection>scm:git:git@github.com:wvlet/config.git</developerConnection>
+      <url>github.com/wvlet/config.git</url>
     </scm>
     <developers>
       <developer>
@@ -67,9 +67,12 @@ lazy val wvletConfig =
     buildSettings,
     description := "wvlet configuration module",
     libraryDependencies ++= Seq(
-      wvletTest,
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
       "org.yaml" % "snakeyaml" % "1.14",
-      "org.wvlet" %% "object-schema" % "1.0",
-       wvletTest 
+      "org.wvlet" %% "surface" % "0.14",
+      "org.wvlet" %% "wvlet-log" % "1.2.3",
+      wvletTest
     )
   )
+

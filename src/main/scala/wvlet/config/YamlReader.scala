@@ -18,16 +18,19 @@ import java.{util => ju}
 import org.yaml.snakeyaml.Yaml
 import wvlet.log.LogSupport
 import wvlet.log.io.IOUtil._
-import wvlet.obj.ObjectBuilder
+import wvlet.surface.reflect.ObjectBuilder
+import wvlet.surface.Surface
+import wvlet.surface.reflect.RuntimeSurface
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 import scala.reflect.ClassTag
+import scala.reflect.runtime.{universe => ru}
 
 object YamlReader extends LogSupport {
 
-  def load[A](resourcePath: String, env: String)(implicit m: ClassTag[A]): A = {
+  def load[A: ru.TypeTag](resourcePath: String, env: String): A = {
     val map = loadMapOf[A](resourcePath)
     if (!map.containsKey(env)) {
       throw new IllegalArgumentException(s"Env $env is not found in $resourcePath")
@@ -35,11 +38,12 @@ object YamlReader extends LogSupport {
     map(env)
   }
 
-  def loadMapOf[A](resourcePath: String)(implicit m: ClassTag[A]): Map[String, A] = {
+  def loadMapOf[A: ru.TypeTag](resourcePath: String): Map[String, A] = {
     val yaml = loadYaml(resourcePath)
+    val surface: Surface = RuntimeSurface(implicitly[ru.TypeTag[A]].tpe)
     val map = ListMap.newBuilder[String, A]
     for ((k, v) <- yaml) yield {
-      map += k.toString -> bind[A](v.asInstanceOf[java.util.Map[AnyRef, AnyRef]])
+      map += k.toString -> bind[A](surface, v.asInstanceOf[java.util.Map[AnyRef, AnyRef]])
     }
     map.result
   }
@@ -60,14 +64,15 @@ object YamlReader extends LogSupport {
     .toSeq
   }
 
-  def bind[A: ClassTag](prop: Map[AnyRef, AnyRef]): A = {
-    bind(prop.asJava).asInstanceOf[A]
+  def bind[A: ru.TypeTag](prop: Map[AnyRef, AnyRef]): A = {
+    bind(RuntimeSurface(implicitly[ru.TypeTag[A]].tpe), prop.asJava).asInstanceOf[A]
   }
 
-  def bind[A: ClassTag](prop: java.util.Map[AnyRef, AnyRef]): A = {
-    val builder = ObjectBuilder(implicitly[ClassTag[A]].runtimeClass)
+  def bind[A](surface:Surface, prop: java.util.Map[AnyRef, AnyRef]): A = {
+    trace(s"bind ${surface}, prop:${prop.asScala}")
+    val builder = ObjectBuilder(surface)
     if (prop != null) {
-      for ((k, v) <- prop) {
+      for ((k, v) <- prop.asScala) {
         v match {
           case al: java.util.ArrayList[_] =>
             for (a <- al) {
@@ -80,6 +85,5 @@ object YamlReader extends LogSupport {
     }
     builder.build.asInstanceOf[A]
   }
-
 }
 

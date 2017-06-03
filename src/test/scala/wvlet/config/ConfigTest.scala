@@ -18,7 +18,7 @@ import java.util.Properties
 
 import wvlet.config.PropertiesConfig.{ConfigKey, Prefix}
 import wvlet.log.io.IOUtil
-import wvlet.obj.tag._
+import wvlet.surface.tag._
 import wvlet.test.WvletSpec
 
 trait AppScope
@@ -165,14 +165,14 @@ class ConfigTest extends WvletSpec {
       c2 shouldBe DefaultConfig(1, "world")
     }
 
-    "show the default configuration" in {
+    "show the default configuration" taggedAs("show-default") in {
       val config = Config(env = "default", configPaths = configPaths)
                    .registerFromYaml[SampleConfig]("myconfig.yml")
 
       val default = config.defaultValueOf[SampleConfig]
       val current = config.of[SampleConfig]
 
-      info(s"default: ${default}, current: ${current}")
+      info(s"default: ${default}\ncurrent: ${current}")
 
       val changes = config.getConfigChanges
       changes.size shouldBe 2

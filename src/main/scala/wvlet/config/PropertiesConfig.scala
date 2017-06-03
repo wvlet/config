@@ -15,12 +15,12 @@ package wvlet.config
 
 import java.util.Properties
 
+import wvlet.config.Config.CanonicalNameFormatter
 import wvlet.log.LogSupport
-import wvlet.obj.ObjectBuilder.CanonicalNameFormatter
-import wvlet.obj.{ObjectBuilder, ObjectSchema, ObjectType, TaggedObjectType}
+import wvlet.surface.{Surface, TaggedSurface}
+import wvlet.surface.reflect.ObjectBuilder
 
 import scala.util.{Failure, Success, Try}
-import scala.reflect.runtime.{universe => ru}
 
 /**
   * Helper class to overwrite config objects using Java Properties
@@ -38,14 +38,14 @@ object PropertiesConfig extends LogSupport {
   }
   case class ConfigProperty(key: ConfigKey, v: Any)
 
-  private[config] def extractPrefix(t: ObjectType): Prefix = {
+  private[config] def extractPrefix(t: Surface): Prefix = {
     def canonicalize(s: String): String = {
       val name = s.replaceAll("Config$", "")
       CanonicalNameFormatter.format(name)
     }
     t match {
-      case TaggedObjectType(base, taggedType) =>
-        Prefix(canonicalize(base.name), Some(CanonicalNameFormatter.format(taggedType.name)))
+      case TaggedSurface(base, tag) =>
+        Prefix(canonicalize(base.name), Some(CanonicalNameFormatter.format(tag.name)))
       case _ =>
         Prefix(canonicalize(t.name), None)
     }
@@ -70,14 +70,14 @@ object PropertiesConfig extends LogSupport {
     }
   }
 
-  private[config] def toConfigProperties(tpe:ObjectType, config: Any): Seq[ConfigProperty] = {
+  private[config] def toConfigProperties(tpe:Surface, config: Any): Seq[ConfigProperty] = {
     val prefix = extractPrefix(tpe)
-    val schema = ObjectSchema.of(tpe)
     val b = Seq.newBuilder[ConfigProperty]
-    for (p <- schema.parameters) yield {
+    for (p <- tpe.params) {
       val key = ConfigKey(prefix, CanonicalNameFormatter.format(p.name))
       Try(p.get(config)) match {
-        case Success(v) => b += ConfigProperty(key, v)
+        case Success(v) =>
+          b += ConfigProperty(key, v)
         case Failure(e) =>
           warn(s"Failed to read parameter ${p} from ${config}")
       }
@@ -96,19 +96,23 @@ object PropertiesConfig extends LogSupport {
       }
       b.result
     }
-
     val unusedProperties = Seq.newBuilder[ConfigProperty]
 
     // Check properties for unknown config objects
     val knownPrefixes = config.map(x => extractPrefix(x.tpe)).toSet
+
     unusedProperties ++= overrides.filterNot(x => knownPrefixes.contains(x.key.prefix))
 
     val newConfigs = for (ConfigHolder(tpe, value) <- config) yield {
-      val configBuilder = ObjectBuilder.fromObject(value)
+      val configBuilder = ObjectBuilder.fromObject(tpe, value)
       val prefix = extractPrefix(tpe)
-      val schema = ObjectSchema.of(tpe)
+      val schema = tpe
 
-      val (overrideParams, unused) = overrides.filter(_.key.prefix == prefix).partition(p => schema.containsParameter(p.key.param))
+      val (overrideParams, unused) =
+        overrides
+        .filter(_.key.prefix == prefix)
+        .partition(p => schema.params.exists(_.name == p.key.param))
+
       unusedProperties ++= unused
       for (p <- overrideParams) {
         trace(s"override: ${p}")
