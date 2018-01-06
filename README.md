@@ -1,7 +1,7 @@
 wvlet-config
 ===
 
-NOTICE: wvlet-config is now part of Airframe project: http://wvlet.org/airframe/docs/config.html
+NOTICE: wvlet-config is now part of Airframe project: http://wvlet.org/airframe/docs/airframe-config.html
  - New source code location: https://github.com/wvlet/airframe/tree/master/airframe-config
 
 wvlet-config enables configure your Scala applications in a simple flow:
